@@ -49,6 +49,7 @@ namespace MySQL_Proxy.parser
             return queryString;
         }
 
+        //TODO solve out of order error
         public Packet PermissionErrorPacket(int seq)
         {
             Packet packet = new Packet();
@@ -59,7 +60,7 @@ namespace MySQL_Proxy.parser
             payload.AddRange(errorMessage);
 
             packet.payloadLength = payload.Count;
-            packet.seqNumber = 0;
+            packet.seqNumber = seq + 1;
             packet.payload = payload.ToArray();
 
             return packet;
