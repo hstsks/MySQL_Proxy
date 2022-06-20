@@ -1,22 +1,31 @@
 ﻿using System;
-using System.Text;
 using System.Threading;
 using log4net;
+using System.Text;
 using MySQL_Proxy.connector;
+using MySQL_Proxy.parser;
+using MySQL_Proxy.exception;
+using MySQL_Proxy.type;
 
 namespace MySQL_Proxy.handler
 {
+    delegate void OnClose(string id);
     class Handler
     {
-        private static readonly ILog clientLogger = LogManager.GetLogger("client");
-        private static readonly ILog DataBaseLogger = LogManager.GetLogger("database");
+        public string handlerID
+        {
+            get { return clientConnector.clientID; }
+        }
 
+        public OnClose onClose;
 
-        public static ManualResetEvent isClientReceive = new ManualResetEvent(false);
-        public static ManualResetEvent isDataBaseReceive = new ManualResetEvent(true);
+        private ClientPacketParser clientPacketParser = new ClientPacketParser();
 
         private ClientConnector clientConnector;
         private DataBaseConnector dataBaseConnector;
+
+        //private static readonly ILog clientLogger = LogManager.GetLogger("client");
+        //private static readonly ILog dataBaseLogger = LogManager.GetLogger("database");
 
         public Handler(IAsyncResult ar)
         {
@@ -25,15 +34,43 @@ namespace MySQL_Proxy.handler
 
             clientConnector.onMessage = new OnMessage(OnClientMessage);
             dataBaseConnector.onMessage = new OnMessage(OnDataBaseMessage);
+
+            clientConnector.ParseResponse = new ParseResponse(ParseHandShakeRes);
         }
 
         private void OnClientMessage(byte[] data)
         {
-            dataBaseConnector.Send(data);
+            try
+            {
+                clientPacketParser.checkQuery(data);
+                dataBaseConnector.Send(data);
+            }
+            catch (PermissionDeniedException e)
+            {
+                Console.WriteLine("permission denied exception");
+                dataBaseConnector.Send(e.errorPacket);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                throw e;
+            }
         }
         private void OnDataBaseMessage(byte[] data)
         {
             clientConnector.Send(data);
+        }
+
+        private HandShakeResponse ParseHandShakeRes(byte[] input)
+        {
+            HandShakeResponse response = clientPacketParser.parseHandShakeResponse(input);
+            if (response.authPluginName == "clear_text_authentication")
+            {
+                //TODO connect by another account
+            }
+            OnClientMessage(input);
+
+            return response;
         }
     }
 }

@@ -21,7 +21,6 @@ namespace MySQL_Proxy.connector
                 socket = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
 
                 socket.BeginConnect(remoteEP, new AsyncCallback(ConnectCallback), socket);
-
             }
             catch (Exception e)
             {

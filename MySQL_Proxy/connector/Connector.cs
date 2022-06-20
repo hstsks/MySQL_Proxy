@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Threading;
 using System.Net.Sockets;
+using System.Collections.Generic;
+using System.Linq;
 using MySQL_Proxy.state;
 using MySQL_Proxy.parser;
-using System.Threading;
+using MySQL_Proxy.type;
 
 namespace MySQL_Proxy.connector
 {
@@ -13,7 +16,7 @@ namespace MySQL_Proxy.connector
         protected Socket socket { get; set; }
         public OnMessage onMessage;
         public static ManualResetEvent isParseComplete = new ManualResetEvent(true);
-        private PacketParser packetParser = new PacketParser();
+        protected PacketCollector packetCollector { get; set; } = new PacketCollector();
 
         public Connector ()
         {
@@ -30,10 +33,10 @@ namespace MySQL_Proxy.connector
                 isParseComplete.WaitOne();
                 isParseComplete.Reset();
 
-                if (packetParser.ParsePacket(state.buffer))
+                if (packetCollector.RefinePacket(state.buffer))
                 {
-                    byte[] parsedBuffer = packetParser.GetData();
-                    packetParser.ClearData();
+                    byte[] parsedBuffer = packetCollector.GetData();
+                    packetCollector.ClearData();
                     this.onMessage(parsedBuffer);
                 }
 
@@ -45,6 +48,26 @@ namespace MySQL_Proxy.connector
         public void Send(byte[] data)
         {
             socket.BeginSend(data, 0, data.Length, 0, new AsyncCallback(SendCallback), socket);
+        }
+        public void Send(Packet packet)
+        {
+            List<byte> payloadLength = BitConverter.GetBytes(packet.payloadLength).Take(3).ToList<byte>();
+            List<byte> seqNumber = BitConverter.GetBytes(packet.seqNumber).Take(1).ToList<byte>();
+            List<byte> payload = packet.payload.ToList<byte>();
+
+            List<byte> packetData = new List<byte>(payloadLength);
+            packetData.AddRange(seqNumber);
+            packetData.AddRange(payload);
+
+            Console.WriteLine(BitConverter.ToString(packetData.ToArray()).Replace("-", " "));
+            Send(packetData.ToArray());
+        }
+        public void Send(List<Packet> packets)
+        {
+            foreach (Packet packet in packets)
+            {
+                Send(packet);
+            }
         }
         private void SendCallback(IAsyncResult ar)
         {

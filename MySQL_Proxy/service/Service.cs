@@ -11,9 +11,23 @@ namespace MySQL_Proxy.service
         public void Create(IAsyncResult ar)
         {
             Handler handler = new Handler(ar);
-
+            handler.onClose = new OnClose(OnHandlerClose);
 
             handlerList.Add(handler);
+        }
+
+        private void OnHandlerClose(string id)
+        {
+            if (id == null)
+            {
+                return;
+            }
+            Handler target = handlerList.Find(x => x.handlerID.Contains(id));
+
+            if(target != null)
+            {
+                handlerList.Remove(target);
+            }
         }
     }
 }

@@ -48,7 +48,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="exception\PermissionDeniedException.cs" />
     <Compile Include="handler\Handler.cs" />
+    <Compile Include="parser\ClientPacketParser.cs" />
+    <Compile Include="parser\PacketCollector.cs" />
     <Compile Include="parser\PacketParser.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -57,7 +60,8 @@
     <Compile Include="connector\Connector.cs" />
     <Compile Include="connector\ClientConnector.cs" />
     <Compile Include="connector\DataBaseConnector.cs" />
-    <Compile Include="state\StateObject.cs" />
+    <Compile Include="type\Packet.cs" />
+    <Compile Include="type\StateObject.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -66,6 +70,5 @@
     </None>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
