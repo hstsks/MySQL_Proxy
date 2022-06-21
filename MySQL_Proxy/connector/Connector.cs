@@ -45,7 +45,8 @@ namespace MySQL_Proxy.connector
 
                     handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReadCallback), state);
                 }
-            } catch (ObjectDisposedException e)
+            } 
+            catch (ObjectDisposedException e)
             {
 
             } catch (Exception e)
@@ -67,7 +68,19 @@ namespace MySQL_Proxy.connector
         }
         public void Send(byte[] data)
         {
-            socket.BeginSend(data, 0, data.Length, 0, new AsyncCallback(SendCallback), socket);
+            try
+            {
+                socket.BeginSend(data, 0, data.Length, 0, new AsyncCallback(SendCallback), socket);
+            }
+            catch (ObjectDisposedException e)
+            {
+
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                Close();
+            }
         }
         public void Send(Packet packet)
         {
