@@ -24,9 +24,6 @@ namespace MySQL_Proxy.handler
         private ClientConnector clientConnector;
         private DataBaseConnector dataBaseConnector;
 
-        //private static readonly ILog clientLogger = LogManager.GetLogger("client");
-        //private static readonly ILog dataBaseLogger = LogManager.GetLogger("database");
-
         public Handler(IAsyncResult ar)
         {
             clientConnector = new ClientConnector(ar);

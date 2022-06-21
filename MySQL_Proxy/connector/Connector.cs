@@ -27,22 +27,31 @@ namespace MySQL_Proxy.connector
             Socket handler = state.workSocket;
 
             int byteRead = handler.EndReceive(ar);
-
-            if (byteRead > 0)
+            try
             {
-                isParseComplete.WaitOne();
-                isParseComplete.Reset();
-
-                if (packetCollector.RefinePacket(state.buffer))
+                if (byteRead > 0)
                 {
-                    byte[] parsedBuffer = packetCollector.GetData();
-                    packetCollector.ClearData();
-                    this.onMessage(parsedBuffer);
+                    isParseComplete.WaitOne();
+                    isParseComplete.Reset();
+
+                    if (packetCollector.RefinePacket(state.buffer))
+                    {
+                        byte[] parsedBuffer = packetCollector.GetData();
+                        packetCollector.ClearData();
+                        this.onMessage(parsedBuffer);
+                    }
+
+                    isParseComplete.WaitOne();
+
+                    handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReadCallback), state);
                 }
+            } catch (ObjectDisposedException e)
+            {
 
-                isParseComplete.WaitOne();
-
-                handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReadCallback), state);
+            } catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                Close();
             }
         }
         public void Close()
