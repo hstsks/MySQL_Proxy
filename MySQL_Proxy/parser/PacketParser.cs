@@ -21,11 +21,6 @@ namespace MySQL_Proxy.parser
                 packet.seqNumber = data[param + 3];
                 packet.payload = data.Skip(param + 4).Take(packet.payloadLength).ToArray();
 
-                if (packet.payloadLength == 16777215)
-                {
-                    //TODO concat next packet
-                }
-
                 packetList.Add(packet);
 
                 param = param + 4 + packet.payloadLength;
@@ -46,6 +41,28 @@ namespace MySQL_Proxy.parser
             }
             return result;
         }
+        public List<byte> Int32ToLenencInt (int num)
+        {
+            List<byte> result = new List<byte>();
+            byte[] data = BitConverter.GetBytes(num);
+
+            if (num < 256)
+            {
+                result.Add(data[0]);
+            }
+            else if (num < 256 * 256)
+            {
+                byte size = 253;
+                result.Add(size);
+                result.AddRange(data.Take(2).ToList<byte>());
+            } else
+            {
+                byte size = 254;
+                result.Add(size);
+                result.AddRange(data.Take(3).ToList<byte>());
+            }
+            return result;
+        }
 
         public string NullTerminateStr(List<byte> input)
         {
@@ -60,16 +77,16 @@ namespace MySQL_Proxy.parser
         }
         public string LenencStr(List<byte> input)
         {
-            int length = LenencInt(input);
+            int length = (int)LenencInt(input);
             if (length == 0) return "";
             byte[] str = input.Take(length).ToArray();
             input.RemoveRange(0, length);
 
             return Encoding.UTF8.GetString(str);
         }
-        public int LenencInt(List<byte> input)
+        public ulong LenencInt(List<byte> input)
         {
-            int result;
+            ulong result;
             if (input[0] < 251)
             {
                 result = input[0];
@@ -81,16 +98,16 @@ namespace MySQL_Proxy.parser
             } else if (input[0] == 254)
             {
                 byte empty = 0;
-                result = (int)BitConverter.ToUInt32(input.Take(4).Append(empty).ToArray(), 1);
+                result = BitConverter.ToUInt32(input.Take(4).Append(empty).ToArray(), 1);
                 input.RemoveRange(0, 5);
 
             } else if (input[0] == 255)
             {
-                result = (int)BitConverter.ToUInt64(input.Take(9).ToArray(), 1);
+                result = BitConverter.ToUInt64(input.Take(9).ToArray(), 1);
                 input.RemoveRange(0, 9);
             } else
             {
-                return -1;
+                throw new NullReferenceException();
             }
             return result;
         }

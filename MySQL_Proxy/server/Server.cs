@@ -36,7 +36,6 @@ namespace MySQL_Proxy.server
                 {
                     allDone.Reset();
 
-                    Console.WriteLine("Waiting for a connection.");
                     listener.BeginAccept(new AsyncCallback(service.Create), listener);
 
                     allDone.WaitOne();

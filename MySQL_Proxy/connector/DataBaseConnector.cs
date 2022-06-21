@@ -35,8 +35,6 @@ namespace MySQL_Proxy.connector
 
                 socket.EndConnect(ar);
 
-                Console.WriteLine("Socket connected to : {0}\n", socket.RemoteEndPoint.ToString());
-
                 StateObject state = new StateObject();
                 state.workSocket = socket;
 

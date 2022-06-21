@@ -45,6 +45,17 @@ namespace MySQL_Proxy.connector
                 handler.BeginReceive(state.buffer, 0, StateObject.BufferSize, 0, new AsyncCallback(ReadCallback), state);
             }
         }
+        public void Close()
+        {
+            try
+            {
+                socket.Shutdown(SocketShutdown.Both);
+            }
+            finally
+            {
+                socket.Close();
+            }
+        }
         public void Send(byte[] data)
         {
             socket.BeginSend(data, 0, data.Length, 0, new AsyncCallback(SendCallback), socket);
@@ -61,13 +72,6 @@ namespace MySQL_Proxy.connector
 
             Console.WriteLine(BitConverter.ToString(packetData.ToArray()).Replace("-", " "));
             Send(packetData.ToArray());
-        }
-        public void Send(List<Packet> packets)
-        {
-            foreach (Packet packet in packets)
-            {
-                Send(packet);
-            }
         }
         private void SendCallback(IAsyncResult ar)
         {

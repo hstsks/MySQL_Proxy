@@ -42,8 +42,9 @@ namespace MySQL_Proxy.handler
         {
             try
             {
-                clientPacketParser.checkQuery(data);
+                bool isClosed = clientPacketParser.checkQuery(data);
                 dataBaseConnector.Send(data);
+                if (isClosed) OnClose();
             }
             catch (PermissionDeniedException e)
             {
@@ -64,13 +65,22 @@ namespace MySQL_Proxy.handler
         private HandShakeResponse ParseHandShakeRes(byte[] input)
         {
             HandShakeResponse response = clientPacketParser.parseHandShakeResponse(input);
-            if (response.authPluginName == "clear_text_authentication")
+            if (response.authPluginName == "mysql_clear_password")
             {
-                //TODO connect by another account
+                dataBaseConnector.Send(clientPacketParser.PreparedLoginPacket(response));
+            } else
+            {
+                OnClientMessage(input);
             }
-            OnClientMessage(input);
 
             return response;
+        }
+
+        private void OnClose()
+        {
+            clientConnector.Close();
+            dataBaseConnector.Close();
+            onClose(handlerID);
         }
     }
 }

@@ -16,7 +16,6 @@ namespace MySQL_Proxy.connector
 
             Socket listener = (Socket)ar.AsyncState;
             socket = listener.EndAccept(ar);
-            Console.WriteLine("Socket connected to : {0}\n", socket.RemoteEndPoint.ToString());
 
             StateObject state = new StateObject() { workSocket = socket };
 

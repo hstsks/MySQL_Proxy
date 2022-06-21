@@ -12,7 +12,7 @@ namespace MySQL_Proxy.type
     class HandShakeResponse
     {
         public byte[] capacityFlags;
-        public int maxPacketSize;
+        public long maxPacketSize;
         public byte charSet;
         public string userName;
         public string database;

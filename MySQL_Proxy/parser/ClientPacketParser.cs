@@ -11,16 +11,12 @@ namespace MySQL_Proxy.parser
 {
     class ClientPacketParser : PacketParser
     {
-        private byte[] CLIENT_PLUGIN_AUTH_LENENC_CLIENT_DATA = { 0, 32, 0, 0 };
-        private byte[] CLIENT_SECURE_CONNECTION = { 0, 0, 128, 0 };
-        private byte[] CLIENT_CONNECT_WITH_DB = {  0, 0, 0 ,8 };
-        private byte[] CLIENT_PLUGIN_AUTH = { 0, 8, 0, 0 };
-        private byte[] CLIENT_CONNECT_ATTRS = { 0, 16, 0, 0 };
         private static readonly ILog clientLogger = LogManager.GetLogger("client");
 
-        public void checkQuery(byte[] data)
+        public bool checkQuery(byte[] data)
         {
             List<Packet> packetList = SlicePacket(data.ToList<byte>());
+            bool isClosed = false;
 
             foreach ( Packet packet in packetList)
             {
@@ -29,17 +25,18 @@ namespace MySQL_Proxy.parser
                     parseQuery(packet);
                 } else if (packet.payloadLength == 1 && packet.seqNumber == 0 && packet.payload[0] == 1)
                 {
-                    Console.WriteLine("close");
-                    // TODO close handler
+                    isClosed = true;
                 }
             }
+
+            return isClosed;
         }
         public string parseQuery(Packet packet)
         {
             string queryString = Encoding.UTF8.GetString(packet.payload.Skip(3).ToArray());
             clientLogger.Info(queryString);
 
-            Regex chequer = new Regex("chequer",RegexOptions.IgnoreCase);
+            Regex chequer = new Regex("CHEQUER",RegexOptions.IgnoreCase);
             if (chequer.IsMatch(queryString))
             {
                 Packet errorPacket = PermissionErrorPacket(packet.seqNumber);
@@ -65,6 +62,43 @@ namespace MySQL_Proxy.parser
 
             return packet;
         }
+        public Packet PreparedLoginPacket(HandShakeResponse originalLogin)
+        {
+            Packet packet = new Packet();
+            List<byte> payload = new List<byte>();
+            byte empty = 0;
+            string preparedAccount = "hstsks";
+            byte[] preparedAuthData =
+            {
+                32, 242, 125, 189, 44, 42, 156, 101, 228, 1, 114, 204, 3, 51, 127, 52, 131, 149, 46, 63, 255, 10, 84, 192, 106, 53, 144, 50, 168, 210, 172, 46, 253
+            };
+
+            payload.AddRange(originalLogin.capacityFlags);
+            payload.AddRange(BitConverter.GetBytes(originalLogin.maxPacketSize));
+            payload.Add(originalLogin.charSet);
+            for (int i = 9; i < 23; i++)
+            {
+                payload.Add(empty);
+            }
+            payload.AddRange(Encoding.UTF8.GetBytes(preparedAccount));
+            payload.Add(empty);
+            payload.AddRange(preparedAuthData.ToList<byte>());
+            payload.AddRange(Encoding.UTF8.GetBytes("caching_sha2_password"));
+
+            List<byte> keyValuePair = new List<byte>();
+            foreach (KeyValuePair<string,string> pair in originalLogin.keyValuePair)
+            {
+                keyValuePair.AddRange(Int32ToLenencInt(pair.Key.Length));
+                keyValuePair.AddRange(Encoding.UTF8.GetBytes(pair.Key));
+                keyValuePair.AddRange(Int32ToLenencInt(pair.Value.Length));
+                keyValuePair.AddRange(Encoding.UTF8.GetBytes(pair.Value));
+            }
+            List<byte> kayValuePayload = Int32ToLenencInt(keyValuePair.Count);
+            kayValuePayload.AddRange(keyValuePair);
+            payload.AddRange(kayValuePayload);
+
+            return packet;
+        }
 
         public HandShakeResponse parseHandShakeResponse(byte[] packet)
         {
@@ -72,7 +106,7 @@ namespace MySQL_Proxy.parser
             List<byte> data = packet.Skip(36).ToList<byte>();
 
             response.capacityFlags = packet.Skip(4).Take(4).ToArray();
-            response.maxPacketSize = BitConverter.ToInt32(packet,8);
+            response.maxPacketSize = BitConverter.ToInt64(packet,8);
             response.charSet = packet[12];
 
             response.userName = NullTerminateStr(data);
@@ -105,7 +139,7 @@ namespace MySQL_Proxy.parser
             {
                 response.keyValuePair = new Dictionary<string, string>();
 
-                int lengthOfPair = LenencInt(data);
+                int lengthOfPair = (int)LenencInt(data);
                 int readData = 0;
 
                 while (readData < lengthOfPair)
