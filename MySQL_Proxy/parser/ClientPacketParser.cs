@@ -46,13 +46,12 @@ namespace MySQL_Proxy.parser
             return queryString;
         }
 
-        //TODO solve out of order error
         public Packet PermissionErrorPacket(int seq)
         {
             Packet packet = new Packet();
 
-            byte[] errorHeader = { 255, 81, 4, 35, 52, 50, 48, 48, 48 };
-            List<byte> errorMessage = Encoding.UTF8.GetBytes("No permission to access the CHEQUER").ToList<byte>();
+            byte[] errorHeader = { 255, 37, 5, 35, 55, 48, 49, 48, 48 };
+            List<byte> errorMessage = Encoding.UTF8.GetBytes(" No permission to access the CHEQUER").ToList<byte>();
             List<byte> payload = new List<byte>(errorHeader);
             payload.AddRange(errorMessage);
 

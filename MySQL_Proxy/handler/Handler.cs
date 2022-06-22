@@ -45,8 +45,7 @@ namespace MySQL_Proxy.handler
             }
             catch (PermissionDeniedException e)
             {
-                Console.WriteLine("permission denied exception");
-                dataBaseConnector.Send(e.errorPacket);
+                clientConnector.Send(e.errorPacket);
             }
             catch (Exception e)
             {

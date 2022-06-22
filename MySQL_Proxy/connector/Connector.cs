@@ -26,9 +26,10 @@ namespace MySQL_Proxy.connector
             StateObject state = (StateObject)ar.AsyncState;
             Socket handler = state.workSocket;
 
-            int byteRead = handler.EndReceive(ar);
             try
             {
+                int byteRead = handler.EndReceive(ar);
+
                 if (byteRead > 0)
                 {
                     isParseComplete.WaitOne();
@@ -92,7 +93,6 @@ namespace MySQL_Proxy.connector
             packetData.AddRange(seqNumber);
             packetData.AddRange(payload);
 
-            Console.WriteLine(BitConverter.ToString(packetData.ToArray()).Replace("-", " "));
             Send(packetData.ToArray());
         }
         private void SendCallback(IAsyncResult ar)
