@@ -9,6 +9,18 @@ namespace MySQL_Proxy.type
         public byte[] payload;
     }
 
+    class InitHandShake
+    {
+        public byte protocolVer;
+        public string serverVer;
+        public byte[] connectionID;
+        public string authPluginData;
+        public byte[] statusFlags;
+        public byte[] capacityFlags;
+        public byte charSet;
+        public string authPluginName;
+    }
+
     class HandShakeResponse
     {
         public byte[] capacityFlags;

@@ -61,16 +61,20 @@ namespace MySQL_Proxy.parser
 
             return packet;
         }
-        public Packet PreparedLoginPacket(HandShakeResponse originalLogin)
+
+        private string HashPassword(string password, string challenge)
+        {
+            //TODO hash challenge with password by SHA2
+            return password + challenge;
+        }
+
+        public Packet PreparedLoginPacket(HandShakeResponse originalLogin, string authCallenge)
         {
             Packet packet = new Packet();
             List<byte> payload = new List<byte>();
             byte empty = 0;
             string preparedAccount = "hstsks";
-            byte[] preparedAuthData =
-            {
-                32, 242, 125, 189, 44, 42, 156, 101, 228, 1, 114, 204, 3, 51, 127, 52, 131, 149, 46, 63, 255, 10, 84, 192, 106, 53, 144, 50, 168, 210, 172, 46, 253
-            };
+            string preparedPassword = "password";
 
             payload.AddRange(originalLogin.capacityFlags);
             payload.AddRange(BitConverter.GetBytes(originalLogin.maxPacketSize));
@@ -81,7 +85,7 @@ namespace MySQL_Proxy.parser
             }
             payload.AddRange(Encoding.UTF8.GetBytes(preparedAccount));
             payload.Add(empty);
-            payload.AddRange(preparedAuthData.ToList<byte>());
+            payload.AddRange(Encoding.UTF8.GetBytes(HashPassword(preparedPassword, authCallenge)));
             payload.AddRange(Encoding.UTF8.GetBytes("caching_sha2_password"));
 
             List<byte> keyValuePair = new List<byte>();

@@ -51,6 +51,7 @@
     <Compile Include="exception\PermissionDeniedException.cs" />
     <Compile Include="handler\Handler.cs" />
     <Compile Include="parser\ClientPacketParser.cs" />
+    <Compile Include="parser\DataBasePacketParser.cs" />
     <Compile Include="parser\PacketCollector.cs" />
     <Compile Include="parser\PacketParser.cs" />
     <Compile Include="Program.cs" />

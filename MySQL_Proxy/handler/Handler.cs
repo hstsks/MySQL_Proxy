@@ -16,10 +16,12 @@ namespace MySQL_Proxy.handler
         {
             get { return clientConnector.clientID; }
         }
+        private string authPluginChallenge;
 
         public OnClose onClose;
 
         private ClientPacketParser clientPacketParser = new ClientPacketParser();
+        private DataBasePacketParser dataBasePacketParser = new DataBasePacketParser();
 
         private ClientConnector clientConnector;
         private DataBaseConnector dataBaseConnector;
@@ -32,6 +34,7 @@ namespace MySQL_Proxy.handler
             clientConnector.onMessage = new OnMessage(OnClientMessage);
             dataBaseConnector.onMessage = new OnMessage(OnDataBaseMessage);
 
+            dataBaseConnector.ParseHandShake = new ParseHandShake(ParseInitHandShake);
             clientConnector.ParseResponse = new ParseResponse(ParseHandShakeRes);
         }
 
@@ -63,13 +66,22 @@ namespace MySQL_Proxy.handler
             HandShakeResponse response = clientPacketParser.parseHandShakeResponse(input);
             if (response.authPluginName == "mysql_clear_password")
             {
-                dataBaseConnector.Send(clientPacketParser.PreparedLoginPacket(response));
+                dataBaseConnector.Send(clientPacketParser.PreparedLoginPacket(response, authPluginChallenge));
             } else
             {
                 OnClientMessage(input);
             }
 
             return response;
+        }
+
+        private InitHandShake ParseInitHandShake(byte[] input)
+        {
+            InitHandShake handShake = dataBasePacketParser.ParseInitHandShake(input);
+            authPluginChallenge = handShake.authPluginData;
+            OnDataBaseMessage(input);
+
+            return handShake;
         }
 
         private void OnClose()
